@@ -1,6 +1,7 @@
 const http = require('http');
 const https = require('https');
 const url = require('url');
+const config = require('./config');
 
 http.createServer((proxyReq, proxyResp) => {
     let input = [];
@@ -11,15 +12,10 @@ http.createServer((proxyReq, proxyResp) => {
         input.push(chunk);
     }).on('end', () => {
         let key = url.parse(proxyReq.url, true).query.key;
-        if (!key) {
-            console.log("No key, aborting...");
-            proxyResp.end();
-            return;
-        }
         console.log("Request Body: \n" + input);
 
         input = JSON.parse(Buffer.concat(input).toString());
-        if (input.source == "en" && input.target != "en") {
+        if (input.source == config.nonTranslatableLang && input.target != config.nonTranslatableLang) {
             const fakeResponse = {
                 data: {
                     translations: [{
@@ -34,26 +30,31 @@ http.createServer((proxyReq, proxyResp) => {
         }
 
         const innerReq = https.request({
-            hostname: 'translation.googleapis.com',
-            port: 443,
-            path: '/language/translate/v2?key=' + key,
-            method: 'POST'
+            hostname: config.googleTranslate.hostname,
+            port: config.googleTranslate.port,
+            path: config.googleTranslate.path + (!key ? "" : key),
+            method: config.googleTranslate.method
         }, innerResp => {
             let output = [];
             innerResp.on('data', (chunk) => {
                 output.push(chunk);
             });
             innerResp.on('end', () => {
-                output = Buffer.concat(output).toString()
-                console.log("Response Body: \n" + output);
-                proxyResp.writeHead(200, { 'Content-Type': 'application/json' });
-                proxyResp.write(output);
+                output = JSON.parse(Buffer.concat(output).toString());
+                console.log("Response Body: \n" + JSON.stringify(output));
+                let code = 200;
+                if (!!output.error) {
+                    code = output.error.code;
+                }
+                proxyResp.writeHead(code, { 'Content-Type': 'application/json' });
+                proxyResp.write(JSON.stringify(output));
                 proxyResp.end();
             });
         }).on('error', error => {
-            console.error(error)
+            console.log("Response Error: \n" + output);
+            proxyResp.end();
         });
         innerReq.write(JSON.stringify(input));
         innerReq.end();
     });
-}).listen(8080);
+}).listen(config.port);

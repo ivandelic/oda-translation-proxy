@@ -1,0 +1,39 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: oda-translation-proxy-service
+  labels:
+    app: oda-translation-proxy
+spec:
+  type: LoadBalancer
+  selector:
+    app: oda-translation-proxy
+  ports:
+  - port: 80
+    targetPort: 3000
+    name: http
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: oda-translation-proxy-deployment
+  labels:
+    app: oda-translation-proxy
+spec:
+  selector:
+    matchLabels:
+      app: oda-translation-proxy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: oda-translation-proxy
+        version: v1
+    spec:
+      containers:
+      - name: oda-translation-proxy
+        image: 'eu-frankfurt-1.ocir.io/oraseemeaceeociworkshop/ivandelic/general/oda-translation-proxy:latest'
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+---
