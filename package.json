@@ -2,10 +2,10 @@
   "name": "oda-translation-proxy",
   "version": "1.0.0",
   "description": "Proxy component in between Oracle Digital Assistant and Google Translate service to disable outbound translation of ODA components. Best example is CommonResponse component with translate: true. The component will translate outbound messages even if you have resource boundle to cover foreign language. In this case this proxy component will reply with non-translated text giving you the option to permit outbound translations for ODA.",
-  "main": "src\\oda-translation-proxy.js",
+  "main": "src/oda-translation-proxy.js",
   "dependencies": {},
   "scripts": {
-    "start": "node src\\oda-translation-proxy.js"
+    "start": "node src/oda-translation-proxy.js"
   },
   "repository": {
     "type": "git",

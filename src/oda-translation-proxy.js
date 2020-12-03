@@ -15,7 +15,7 @@ http.createServer((proxyReq, proxyResp) => {
         console.log("Request Body: \n" + input);
 
         input = JSON.parse(Buffer.concat(input).toString());
-        if (input.source == config.nonTranslatableLang && input.target != config.nonTranslatableLang) {
+        if (input.source == config.nonTranslatableLang && input.target != config.nonTranslatableLang && !input.q.startsWith(".", 1)) {
             const fakeResponse = {
                 data: {
                     translations: [{
