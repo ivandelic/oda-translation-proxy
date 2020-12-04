@@ -2,6 +2,7 @@ const http = require('http');
 const https = require('https');
 const url = require('url');
 const config = require('./config');
+require('./character-filter-hu');
 
 http.createServer((proxyReq, proxyResp) => {
     let input = [];
@@ -15,7 +16,7 @@ http.createServer((proxyReq, proxyResp) => {
         console.log("Request Body: \n" + input);
 
         input = JSON.parse(Buffer.concat(input).toString());
-        if (input.source == config.nonTranslatableLang && input.target != config.nonTranslatableLang && !input.q.startsWith(".", 1)) {
+        if (input.source == config.nonTranslatableLang && input.target != config.nonTranslatableLang/* && !input.q.startsWith(".", 1)*/) {
             const fakeResponse = {
                 data: {
                     translations: [{
@@ -41,11 +42,18 @@ http.createServer((proxyReq, proxyResp) => {
             });
             innerResp.on('end', () => {
                 output = JSON.parse(Buffer.concat(output).toString());
+
+                // Magyar language has numerous special characters which needs to be replaced for entity resolution 
+                if (!!output && !!output.data && !!output.data.translations && output.data.translations.length > 0 && !!output.data.translations[0].translatedText)
+                    output.data.translations[0].translatedText = output.data.translations[0].translatedText.replaceSpecialCharacters();
+
                 console.log("Response Body: \n" + JSON.stringify(output));
+
                 let code = 200;
                 if (!!output.error) {
                     code = output.error.code;
                 }
+
                 proxyResp.writeHead(code, { 'Content-Type': 'application/json' });
                 proxyResp.write(JSON.stringify(output));
                 proxyResp.end();
